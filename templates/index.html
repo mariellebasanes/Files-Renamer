@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rename File Application</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a1f;
+      --border: #2d2d35;
+      --text: #e8e6e3;
+      --muted: #8b8b8b;
+      --accent: #6c9ef8;
+      --accent-hover: #8bb3ff;
+      --danger: #e85d5d;
+      --success: #5dce8a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+      color: var(--text);
+    }
+    .toolbar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .toolbar input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.5rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .toolbar input::placeholder { color: var(--muted); }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f0f12;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+    .path-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .folder-section {
+      margin-bottom: 1rem;
+    }
+    .folder-section-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0 0 0.4rem 0;
+    }
+    .folder-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .folder-btn {
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(108, 158, 248, 0.08);
+      color: var(--accent);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .folder-btn:hover {
+      border-color: var(--accent-hover);
+      background: rgba(108, 158, 248, 0.18);
+    }
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border);
+    }
+    th:nth-child(1) { width: 2rem; }
+    th:nth-child(2) { width: 38%; }
+    th:nth-child(3) { width: 38%; }
+    th:nth-child(4) { width: auto; }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .old-name {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+    .new-name input {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85rem;
+    }
+    .new-name input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .type-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--muted);
+    }
+    .type-badge.folder { background: rgba(108, 158, 248, 0.2); color: var(--accent); }
+    .msg {
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .msg.error { background: rgba(232, 93, 93, 0.15); color: var(--danger); }
+    .msg.success { background: rgba(93, 206, 138, 0.15); color: var(--success); }
+    .empty { color: var(--muted); padding: 1.5rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Rename File Application</h1>
+  <p class="path-hint">Folder: <code id="currentFolder">{{ base_folder }}</code></p>
+  <p class="path-hint" style="margin-top:0.25rem;">Only the filename is changed (e.g. <code>video.mp4</code> → <code>video.js</code>). File contents are <strong>not</strong> converted—the file stays the same; only the name changes.</p>
+  <div class="toolbar">
+    <button type="button" class="btn btn-ghost" id="btnBack">Back</button>
+    <input type="text" id="folderInput" placeholder="Enter folder path (or leave blank for current)" value="">
+    <button type="button" class="btn btn-primary" id="btnLoad">Load Folder</button>
+  </div>
+  <div class="folder-section">
+    <p class="folder-section-title">Subfolders in the current folder (click to view files):</p>
+    <div class="folder-buttons" id="folderButtons"></div>
+  </div>
+  <div id="message"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Old name</th>
+          <th>New name</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="fileList">
+        <tr><td colspan="4" class="empty">Enter a folder path and click Load Folder.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const baseFolder = {{ base_folder | tojson }};
+    const folderInput = document.getElementById('folderInput');
+    const btnLoad = document.getElementById('btnLoad');
+    const btnBack = document.getElementById('btnBack');
+    const fileList = document.getElementById('fileList');
+    const currentFolderEl = document.getElementById('currentFolder');
+    const messageEl = document.getElementById('message');
+    const folderButtonsEl = document.getElementById('folderButtons');
+
+    function showMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = 'msg ' + (type || '');
+      messageEl.style.display = text ? 'block' : 'none';
+    }
+
+    function normalizePath(p) {
+      return (p || '').replace(/\\/g, '/');
+    }
+
+    function loadFolder() {
+      const folder = folderInput.value.trim() || baseFolder;
+      showMessage('');
+      fetch('/api/list?folder=' + encodeURIComponent(folder))
+        .then(r => r.json())
+        .then(data => {
+          currentFolderEl.textContent = data.folder;
+          const items = data.items || [];
+
+          // Show buttons for subfolders of the current folder (recurses as you click)
+          const dirs = items.filter(item => item.is_dir);
+          if (dirs.length > 0) {
+            folderButtonsEl.innerHTML = dirs.map((d, idx) => `
+              <button type="button" class="folder-btn" data-folder="${data.folder}/${d.name}">
+                ${idx + 1}: ${escapeHtml(d.name)}
+              </button>
+            `).join('');
+            folderButtonsEl.style.display = 'flex';
+            folderButtonsEl.querySelectorAll('.folder-btn').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const target = this.getAttribute('data-folder');
+                folderInput.value = target;
+                loadFolder();
+              });
+            });
+          } else {
+            folderButtonsEl.innerHTML = '';
+            folderButtonsEl.style.display = 'none';
+          }
+
+          const isBaseFolder = data.folder === baseFolder;
+          if (isBaseFolder) {
+            // At startup, only show the folders (as buttons) and a hint row, not the files themselves
+            if (dirs.length === 0) {
+              fileList.innerHTML = '<tr><td colspan="4" class="empty">No folders found in "COPY FILES HERE".</td></tr>';
+            } else {
+              fileList.innerHTML = '<tr><td colspan="4" class="empty">Select a folder above to see its files.</td></tr>';
+            }
+            return;
+          }
+
+          if (items.length === 0) {
+            fileList.innerHTML = '<tr><td colspan="4" class="empty">No files in this folder.</td></tr>';
+            return;
+          }
+          fileList.innerHTML = items.map((item, i) => `
+            <tr data-index="${i}" data-old="${escapeHtml(item.name)}" data-isdir="${item.is_dir}">
+              <td><span class="type-badge ${item.is_dir ? 'folder' : ''}">${item.is_dir ? 'Dir' : 'File'}</span></td>
+              <td class="old-name">${escapeHtml(item.name)}</td>
+              <td class="new-name"><input type="text" value="${escapeHtml(item.name)}" placeholder="New name"></td>
+              <td><button type="button" class="btn btn-primary btn-rename">Rename</button></td>
+            </tr>
+          `).join('');
+
+          fileList.querySelectorAll('.btn-rename').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const row = this.closest('tr');
+              const oldName = row.dataset.old;
+              const newName = row.querySelector('.new-name input').value.trim();
+              if (!newName) { showMessage('Enter a new name.', 'error'); return; }
+              if (oldName === newName) { showMessage('No change.', 'success'); return; }
+              fetch('/api/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  folder: currentFolderEl.textContent,
+                  old_name: oldName,
+                  new_name: newName
+                })
+              })
+                .then(r => r.json())
+                .then(data => {
+                  if (data.ok) {
+                    showMessage(data.message || 'Renamed.', 'success');
+                    row.dataset.old = newName;
+                    row.querySelector('.old-name').textContent = newName;
+                    row.querySelector('.new-name input').value = newName;
+                  } else {
+                    showMessage(data.error || 'Rename failed.', 'error');
+                  }
+                })
+                .catch(() => showMessage('Request failed.', 'error'));
+            });
+          });
+        })
+        .catch(() => showMessage('Failed to load folder.', 'error'));
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function goBack() {
+      const current = currentFolderEl.textContent || baseFolder;
+      const currentNorm = normalizePath(current);
+      const baseNorm = normalizePath(baseFolder);
+      if (currentNorm === baseNorm) {
+        return; // already at top COPY FILES HERE folder
+      }
+      const parts = currentNorm.split('/');
+      parts.pop(); // remove last segment
+      let parent = parts.join('/');
+      if (!parent) {
+        parent = baseFolder;
+      }
+      if (!normalizePath(parent).startsWith(baseNorm)) {
+        parent = baseFolder;
+      }
+      folderInput.value = parent;
+      loadFolder();
+    }
+
+    btnLoad.addEventListener('click', loadFolder);
+    folderInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadFolder(); });
+    btnBack.addEventListener('click', goBack);
+
+    // Load the "@COPY VIDEOS HERE" folder automatically on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFolder();
+    });
+  </script>
+</body>
+</html>
