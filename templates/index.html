@@ -248,7 +248,7 @@
             folderButtonsEl.style.display = 'none';
           }
 
-          const isBaseFolder = data.folder === baseFolder;
+          const isBaseFolder = normalizePath(data.folder) === normalizePath(baseFolder);
           if (isBaseFolder) {
             // At startup, only show the folders (as buttons) and a hint row, not the files themselves
             if (dirs.length === 0) {
@@ -336,8 +336,10 @@
     folderInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadFolder(); });
     btnBack.addEventListener('click', goBack);
 
-    // Load the "@COPY VIDEOS HERE" folder automatically on page load
+    // Load the base "COPY FILES HERE" folder automatically on page load
     window.addEventListener('DOMContentLoaded', () => {
+      // Ensure the input always points at the base folder by default
+      folderInput.value = baseFolder;
       loadFolder();
     });
   </script>
